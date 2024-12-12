@@ -7,14 +7,21 @@ $ErrorActionPreference = "Stop"
 # Parameter Prompts
 # ---------------------------
 
-# Function to prompt for input with a default value
-function Prompt-Input($prompt, $default = "") {
-    $input = Read-Host "$prompt [$default]"
-    if ([string]::IsNullOrWhiteSpace($input)) {
-        return $default
-    }
-    return $input
+# Function to get user input with a default value
+function Get-InputWithDefault {
+  param (
+      [string]$Prompt,
+      [string]$Default = ""
+  )
+
+  $userInput = Read-Host "$Prompt [$Default]"
+  if ([string]::IsNullOrWhiteSpace($userInput)) {
+      return $Default
+  }
+  return $userInput
 }
+
+
 
 Write-Host "=== Jewelry Processing System Final Setup ===" -ForegroundColor Cyan
 

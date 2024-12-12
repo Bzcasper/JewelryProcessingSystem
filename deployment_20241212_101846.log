@@ -1,0 +1,9 @@
+[2024-12-12 10:18:46] Info : Starting master deployment script...
+[2024-12-12 10:18:50] Info : AWS CLI found
+[2024-12-12 10:18:50] Error : Terraform not found
+[2024-12-12 10:18:50] Info : Docker found
+[2024-12-12 10:18:50] Info : Python found
+[2024-12-12 10:18:50] Info : Git found
+[2024-12-12 10:18:51] Info : kubectl found
+[2024-12-12 10:18:51] Error : Master deployment failed: Missing prerequisites: Terraform
+[2024-12-12 10:18:51] Info : Check deployment_20241212_101846.log for detailed logs

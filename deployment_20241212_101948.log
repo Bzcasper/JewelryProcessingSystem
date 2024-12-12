@@ -1,0 +1,9 @@
+[2024-12-12 10:19:48] Info : Starting master deployment script...
+[2024-12-12 10:19:52] Info : AWS CLI found
+[2024-12-12 10:19:52] Info : Terraform found
+[2024-12-12 10:19:52] Info : Docker found
+[2024-12-12 10:19:52] Info : Python found
+[2024-12-12 10:19:52] Info : Git found
+[2024-12-12 10:19:52] Info : kubectl found
+[2024-12-12 11:11:11] Error : Master deployment failed: Could not find a part of the path 'C:\JewelryProcessingSystem\secure-params.json'.
+[2024-12-12 11:11:11] Info : Check deployment_20241212_101948.log for detailed logs
