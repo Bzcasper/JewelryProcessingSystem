@@ -1,0 +1,48 @@
+# docker-compose.yml
+version: '3.8'
+
+services:
+  scraper:
+    build: 
+      context: .
+      dockerfile: docker/Scraper.Dockerfile
+    environment:
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+    volumes:
+      - scraper_data:/app/data
+    networks:
+      - jewelry-net
+
+  processor:
+    build:
+      context: .
+      dockerfile: docker/Processor.Dockerfile
+    environment:
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+    volumes:
+      - processor_data:/app/data
+    networks:
+      - jewelry-net
+
+  dataset-creator:
+    build:
+      context: .
+      dockerfile: docker/DatasetCreator.Dockerfile
+    environment:
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+    volumes:
+      - dataset_data:/app/data
+    networks:
+      - jewelry-net
+
+networks:
+  jewelry-net:
+    driver: bridge
+
+volumes:
+  scraper_data:
+  processor_data:
+  dataset_data:

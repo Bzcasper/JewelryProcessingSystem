@@ -1,0 +1,36 @@
+# kubernetes/scraper-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jewelry-scraper
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: jewelry-scraper
+  template:
+    metadata:
+      labels:
+        app: jewelry-scraper
+    spec:
+      containers:
+      - name: scraper
+        image: jewelry-scraper:latest
+        env:
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: aws-credentials
+              key: access-key
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: aws-credentials
+              key: secret-key
+        volumeMounts:
+        - name: scraper-data
+          mountPath: /app/data
+      volumes:
+      - name: scraper-data
+        persistentVolumeClaim:
+          claimName: scraper-pvc

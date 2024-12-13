@@ -5,9 +5,10 @@ set -e
 
 echo "Setting up AWS infrastructure for jewelry processing system..."
 
-os.setenv("CLOUDINARY_CLOUD_NAME", "dpciejkg5")
-os.setenv("CLOUDINARY_API_KEY", "932779144596342")
-os.setenv("CLOUDINARY_API_SECRET", "cwIkqaDjk_vV4m-KjpvVhw7MjP4")
+export CLOUDINARY_CLOUD_NAME="dpciejkg5"
+export CLOUDINARY_API_KEY="932779144596342"
+export CLOUDINARY_API_SECRET="cwIkqaDjk_vV4m-KjpvVhw7MjP4"
+
 # Generate random suffix for globally unique bucket names
 SUFFIX=$(date +%s | cut -c 6-10)
 INPUT_BUCKET="jewelry-images-input-${SUFFIX}"

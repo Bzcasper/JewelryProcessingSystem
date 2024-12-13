@@ -1,0 +1,43 @@
+# kubernetes/processor-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jewelry-processor
+spec:
+  replicas: 5
+  selector:
+    matchLabels:
+      app: jewelry-processor
+  template:
+    metadata:
+      labels:
+        app: jewelry-processor
+    spec:
+      containers:
+      - name: processor
+        image: jewelry-processor:latest
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "1"
+          limits:
+            memory: "4Gi"
+            cpu: "2"
+        env:
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: aws-credentials
+              key: access-key
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: aws-credentials
+              key: secret-key
+        volumeMounts:
+        - name: processor-data
+          mountPath: /app/data
+      volumes:
+      - name: processor-data
+        persistentVolumeClaim:
+          claimName: processor-pvc
