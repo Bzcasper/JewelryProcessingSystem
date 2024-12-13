@@ -1,0 +1,15 @@
+# kubernetes/services/scraper-service.yaml
+apiVersion: v1
+kind: dataset-creator
+metadata:
+  name: jewelry-dataset-creator
+  labels:
+    app: jewelry-dataset-creator
+spec:
+  selector:
+    app: jewelry-dataset-creator
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
+  type: ClusterIP

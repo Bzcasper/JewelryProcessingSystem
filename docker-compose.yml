@@ -13,6 +13,7 @@ services:
       - scraper_data:/app/data
     networks:
       - jewelry-net
+    restart: unless-stopped
 
   processor:
     build:
@@ -25,6 +26,7 @@ services:
       - processor_data:/app/data
     networks:
       - jewelry-net
+    restart: unless-stopped
 
   dataset-creator:
     build:
@@ -37,6 +39,7 @@ services:
       - dataset_data:/app/data
     networks:
       - jewelry-net
+    restart: unless-stopped
 
 networks:
   jewelry-net:

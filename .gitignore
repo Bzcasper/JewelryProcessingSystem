@@ -2,3 +2,8 @@ setup-aws-infrastructure.sh
 awscliv2
 aws-sdk-cpp
 awscliv2.zip
+.env
+.dockerignore
+README.md
+image-1.png
+image.png

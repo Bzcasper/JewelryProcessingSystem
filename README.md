@@ -27,3 +27,46 @@ scraper = JewelryWebScraper({
 # Start scraping
 asyncio.run(scraper.start_scraping())
 
+Apply the Secret:
+
+kubectl apply -f kubernetes/secrets/aws-credentials.yaml
+
+kubectl apply -f kubernetes/secrets/aws-credentials.yaml
+b. Apply PersistentVolumeClaims
+kubectl apply -f kubernetes/persistent-volume-claims/
+c. Apply Deployments
+kubectl apply -f kubernetes/deployments/
+d. Apply Services
+kubectl apply -f kubernetes/services/
+e. Apply Ingress
+kubectl apply -f kubernetes/ingress/
+f. Verify Resources
+Check Pods:
+
+kubectl get pods
+Check PVCs:
+
+kubectl get pvc
+Check Services:
+
+kubectl get services
+Check Ingress:
+
+kubectl get ingress
+
+
+
+![alt text](image.png)
+
+![alt text](image-1.png)
+
+
+Access key
+If you lose or forget your secret access key, you cannot retrieve it. Instead, create a new access key and make the old key inactive.
+
+Access key
+Secret access key
+
+AKIASVLKCEFPRDJOE2WJ
+
+nX22PFy3r7l+tAvO6FnpHqi11+4/1FZSEkDIYJyj

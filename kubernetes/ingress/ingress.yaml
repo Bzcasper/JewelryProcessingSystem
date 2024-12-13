@@ -1,0 +1,25 @@
+# kubernetes/ingress/ingress.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: jewelry-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/use-regex: "true"
+spec:
+  tls:
+  - hosts:
+    - your-domain.com
+    secretName: tls-jewelry-ingress # Ensure this secret exists with TLS certs
+  rules:
+  - host: your-domain.com
+    http:
+      paths:
+      - path: /api(/|$)(.*)
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: jewelry-api
+            port:
+              number: 80

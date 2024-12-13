@@ -1,0 +1,14 @@
+# kubernetes/persistent-volume-claims/processor-pvc.yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: processor-pvc
+  labels:
+    app: jewelry-processor
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Gi
+  storageClassName: standard

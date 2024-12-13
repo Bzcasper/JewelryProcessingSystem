@@ -1,0 +1,298 @@
+# cloudinary_processor.py
+import os
+import sys
+from pathlib import Path
+import logging
+import json
+import asyncio
+import aiohttp
+from typing import List, Dict, Optional
+from PIL import Image
+import cloudinary
+import cloudinary.uploader
+import cloudinary.api
+from datetime import datetime
+
+class JewelryImageProcessor:
+    def __init__(self, config_path: str = None):
+        """Initialize processor with configuration"""
+        self.logger = self._setup_logging()
+        self.config = self._load_config(config_path)
+        self._setup_cloudinary()
+        
+        # Tracking for rate limiting
+        self._upload_count = 0
+        self._last_reset = datetime.now()
+        
+    def _setup_logging(self) -> logging.Logger:
+        """Configure logging"""
+        logging.basicConfig(
+            level=logging.INFO,
+            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+            handlers=[
+                logging.FileHandler('jewelry_processor.log'),
+                logging.StreamHandler(sys.stdout)
+            ]
+        )
+        return logging.getLogger('JewelryProcessor')
+        
+    def _load_config(self, config_path: Optional[str]) -> Dict:
+        """Load configuration from file or use defaults"""
+        default_config = {
+            'cloudinary': {
+                'rate_limit': 500,  # Free tier rate limit per hour
+                'max_file_size': 10485760,  # 10MB
+                'allowed_formats': ['jpg', 'jpeg', 'png', 'webp'],
+                'quality_threshold': 80
+            },
+            'image_processing': {
+                'max_dimensions': (2000, 2000),
+                'thumbnail_size': (300, 300),
+                'compression_quality': 85,
+                'preserve_metadata': True
+            },
+            'categories': {
+                'ring': ['fashion', 'handmade', 'vintage', 'antique'],
+                'necklace': ['fashion', 'handmade', 'vintage', 'antique'],
+                'pendant': ['fashion', 'handmade', 'vintage', 'antique'],
+                'bracelet': ['fashion', 'handmade', 'vintage', 'antique'],
+                'earring': ['fashion', 'handmade', 'vintage', 'antique'],
+                'wristwatch': ['fashion', 'handmade', 'vintage', 'antique']
+            }
+        }
+        
+        if config_path and Path(config_path).exists():
+            with open(config_path) as f:
+                user_config = json.load(f)
+                default_config.update(user_config)
+                
+        return default_config
+        
+    def _setup_cloudinary(self):
+        """Configure Cloudinary from environment variables"""
+        try:
+            cloudinary.config(
+                cloud_name=os.getenv('CLOUDINARY_CLOUD_NAME'),
+                api_key=os.getenv('CLOUDINARY_API_KEY'),
+                api_secret=os.getenv('CLOUDINARY_API_SECRET')
+            )
+        except Exception as e:
+            self.logger.error(f"Cloudinary configuration failed: {str(e)}")
+            raise
+            
+    async def process_image(self, image_path: str, category: str, style: str) -> Dict:
+        """Process and upload a single image"""
+        try:
+            # Validate inputs
+            if not self._validate_inputs(image_path, category, style):
+                raise ValueError("Invalid input parameters")
+                
+            # Check rate limits
+            if not self._check_rate_limit():
+                raise Exception("Rate limit exceeded")
+                
+            # Process image
+            processed_image = await self._process_image_file(image_path)
+            
+            # Upload to Cloudinary
+            result = await self._upload_to_cloudinary(processed_image, category, style)
+            
+            # Update tracking
+            self._upload_count += 1
+            
+            return result
+            
+        except Exception as e:
+            self.logger.error(f"Error processing {image_path}: {str(e)}")
+            raise
+            
+    def _validate_inputs(self, image_path: str, category: str, style: str) -> bool:
+        """Validate input parameters"""
+        # Check file exists
+        if not Path(image_path).exists():
+            self.logger.error(f"Image not found: {image_path}")
+            return False
+            
+        # Check category and style
+        if category not in self.config['categories']:
+            self.logger.error(f"Invalid category: {category}")
+            return False
+            
+        if style not in self.config['categories'][category]:
+            self.logger.error(f"Invalid style for category {category}: {style}")
+            return False
+            
+        # Check file format
+        file_ext = Path(image_path).suffix.lower()[1:]
+        if file_ext not in self.config['cloudinary']['allowed_formats']:
+            self.logger.error(f"Unsupported file format: {file_ext}")
+            return False
+            
+        # Check file size
+        file_size = Path(image_path).stat().st_size
+        if file_size > self.config['cloudinary']['max_file_size']:
+            self.logger.error(f"File too large: {file_size} bytes")
+            return False
+            
+        return True
+        
+    def _check_rate_limit(self) -> bool:
+        """Check if within rate limits"""
+        now = datetime.now()
+        hours_elapsed = (now - self._last_reset).total_seconds() / 3600
+        
+        # Reset counter if an hour has passed
+        if hours_elapsed >= 1:
+            self._upload_count = 0
+            self._last_reset = now
+            return True
+            
+        # Check if within limit
+        return self._upload_count < self.config['cloudinary']['rate_limit']
+        
+    async def _process_image_file(self, image_path: str) -> str:
+        """Process image file for upload"""
+        try:
+            with Image.open(image_path) as img:
+                # Convert to RGB if needed
+                if img.mode != 'RGB':
+                    img = img.convert('RGB')
+                    
+                # Resize if needed
+                if any(dim > max_dim for dim, max_dim in zip(img.size, self.config['image_processing']['max_dimensions'])):
+                    img.thumbnail(self.config['image_processing']['max_dimensions'])
+                    
+                # Save processed image
+                output_path = f"{image_path}_processed.jpg"
+                img.save(
+                    output_path,
+                    'JPEG',
+                    quality=self.config['image_processing']['compression_quality'],
+                    optimize=True
+                )
+                
+                return output_path
+                
+        except Exception as e:
+            self.logger.error(f"Image processing failed: {str(e)}")
+            raise
+            
+    async def _upload_to_cloudinary(self, image_path: str, category: str, style: str) -> Dict:
+        """Upload processed image to Cloudinary"""
+        try:
+            # Create upload options
+            upload_options = {
+                'folder': f"jewelry/{category}/{style}",
+                'resource_type': 'image',
+                'quality': 'auto:eco',  # Free tier optimization
+                'format': 'auto',  # Auto-select best format
+                'tags': [category, style, 'jewelry'],
+                'transformation': [
+                    {
+                        'width': self.config['image_processing']['thumbnail_size'][0],
+                        'height': self.config['image_processing']['thumbnail_size'][1],
+                        'crop': 'fill',
+                        'quality': 'auto:eco'
+                    }
+                ]
+            }
+            
+            # Upload file
+            result = cloudinary.uploader.upload(
+                image_path,
+                **upload_options
+            )
+            
+            # Clean up processed file
+            Path(image_path).unlink()
+            
+            return {
+                'public_id': result['public_id'],
+                'url': result['secure_url'],
+                'thumbnail_url': cloudinary.utils.cloudinary_url(
+                    result['public_id'],
+                    transformation=upload_options['transformation']
+                )[0]
+            }
+            
+        except Exception as e:
+            self.logger.error(f"Upload failed: {str(e)}")
+            raise
+            
+    async def batch_process(self, input_dir: str, category: str, style: str) -> List[Dict]:
+        """Process multiple images in a directory"""
+        results = []
+        input_path = Path(input_dir)
+        
+        # Get all image files
+        image_files = []
+        for ext in self.config['cloudinary']['allowed_formats']:
+            image_files.extend(input_path.glob(f"*.{ext}"))
+            
+        # Process images concurrently with rate limiting
+        for image_file in image_files:
+            try:
+                result = await self.process_image(str(image_file), category, style)
+                results.append(result)
+                
+                # Rate limit sleep
+                await asyncio.sleep(1)  # Ensure we don't exceed rate limits
+                
+            except Exception as e:
+                self.logger.error(f"Failed to process {image_file}: {str(e)}")
+                continue
+                
+        return results
+        
+    async def create_product_set(self, main_image: str, detail_images: List[str], category: str, style: str) -> Dict:
+        """Create a set of product images with main and detail views"""
+        try:
+            # Upload main image
+            main_result = await self.process_image(main_image, category, style)
+            
+            # Upload detail images
+            detail_results = []
+            for image in detail_images:
+                result = await self.process_image(image, category, style)
+                detail_results.append(result)
+                
+            return {
+                'main_image': main_result,
+                'detail_images': detail_results
+            }
+            
+        except Exception as e:
+            self.logger.error(f"Failed to create product set: {str(e)}")
+            raise
+
+async def main():
+    # Example usage
+    processor = JewelryImageProcessor()
+    
+    # Process single image
+    result = await processor.process_image(
+        'example.jpg',
+        'ring',
+        'vintage'
+    )
+    print(f"Uploaded image: {result['url']}")
+    
+    # Process directory
+    results = await processor.batch_process(
+        'jewelry_images',
+        'necklace',
+        'handmade'
+    )
+    print(f"Processed {len(results)} images")
+    
+    # Create product set
+    product_set = await processor.create_product_set(
+        'main.jpg',
+        ['detail1.jpg', 'detail2.jpg'],
+        'bracelet',
+        'antique'
+    )
+    print("Product set created successfully")
+
+if __name__ == "__main__":
+    asyncio.run(main())

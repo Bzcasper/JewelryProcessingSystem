@@ -1,0 +1,14 @@
+# kubernetes/persistent-volume-claims/dataset-pvc.yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: dataset-pvc
+  labels:
+    app: jewelry-dataset
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 200Gi
+  storageClassName: standard

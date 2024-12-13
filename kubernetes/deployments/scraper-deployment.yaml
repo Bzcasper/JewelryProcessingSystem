@@ -1,28 +1,20 @@
-# kubernetes/processor-deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: jewelry-processor
+  name: jewelry-scraper
 spec:
-  replicas: 5
+  replicas: 3
   selector:
     matchLabels:
-      app: jewelry-processor
+      app: jewelry-scraper
   template:
     metadata:
       labels:
-        app: jewelry-processor
+        app: jewelry-scraper
     spec:
       containers:
-      - name: processor
-        image: jewelry-processor:latest
-        resources:
-          requests:
-            memory: "2Gi"
-            cpu: "1"
-          limits:
-            memory: "4Gi"
-            cpu: "2"
+      - name: scraper
+        image: jewelry-scraper:latest
         env:
         - name: AWS_ACCESS_KEY_ID
           valueFrom:
@@ -35,9 +27,9 @@ spec:
               name: aws-credentials
               key: secret-key
         volumeMounts:
-        - name: processor-data
+        - name: scraper-data
           mountPath: /app/data
       volumes:
-      - name: processor-data
+      - name: scraper-data
         persistentVolumeClaim:
-          claimName: processor-pvc
+          claimName: scraper-pvc
